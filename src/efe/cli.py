@@ -3,7 +3,7 @@ import argparse
 import subprocess
 import sys
 
-from efe import analysis, audit, checks, config, db, evaluate, export, extract, ingest, pagemap, triage
+from efe import analysis, audit, checks, config, db, evaluate, export, extract, ingest, notes, pagemap, triage
 
 
 def select_docs(conn, args):
@@ -78,6 +78,7 @@ def cmd_analyse(conn, args):
             r = audit.run(conn, d["id"])
             print(label(d), f"audit: {r['opinion'] or 'not found'} ({r['auditor'] or 'auditor not identified'})"
                   + (f" p{r['page']}" if r["page"] else ""))
+            print(label(d), "notes:", notes.run(conn, d["id"]) or "no currency figures found")
     for t in sorted({d["ticker"] for d in docs}):
         print(t, analysis.run(conn, t))
 

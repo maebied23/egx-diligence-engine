@@ -79,7 +79,9 @@ def statement_title(lines: list[str]) -> str | None:
 
 # Fallback when no title can be read (poor scans): a statement recognised by the lines it must contain.
 BODY_SIGNS = {
-    "balance_sheet": [r"total (non[- ]?current |current )?assets", r"total (equity|liabilities)"],
+    # 'total equity and liabilities' as well: a poor scan can lose the assets total (LCSW FY2024 IFRS)
+    "balance_sheet": [r"total (non[- ]?current |current )?assets|total equity and liabilities|total liabilities and equity",
+                      r"total (equity|liabilities)"],
     "cash_flow": [r"operating activities", r"investing activities"],
     "income_statement": [r"gross profit|net sales|revenue", r"before (income )?tax"],
 }
@@ -88,7 +90,7 @@ BODY_SIGNS = {
 def classify_by_body(text: str) -> str | None:
     from efe.mapping import ocr_correct
     body = " ".join(ocr_correct(ln) for ln in text.splitlines())
-    hits = [name for name, pats in BODY_SIGNS.items() if all(re.search(p, body) for p in pats)]
+    hits = [name for name, pats in BODY_SIGNS.items() if all(re.search(p, body, re.I) for p in pats)]
     return hits[0] if len(hits) == 1 else None
 
 

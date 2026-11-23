@@ -96,7 +96,7 @@ def test_exposure_signals_and_flags(conn):
     sig = {r["signal"]: r for r in conn.execute("SELECT * FROM signals WHERE ticker='TEST'")}
     # 2024 is a devaluation year: gross margin 30% -> 20% is -10pp, exposed
     assert sig["S1"]["value"] == pytest.approx(-10) and sig["S1"]["points"] == -1
-    assert sig["S3"]["points"] is None and "not read" in sig["S3"]["missing_reason"]
+    assert sig["S3"]["points"] is None and "not extracted" in sig["S3"]["missing_reason"]
     assert out["profile"] in ("exposed_importer", "exposed (channel not identified)", "insufficient_evidence", "mixed")
     findings = " ".join(r["finding"] for r in conn.execute("SELECT finding FROM flags WHERE ticker='TEST'"))
     assert "FX losses" in findings and "DIO rose" in findings
@@ -108,3 +108,15 @@ def test_export_writes_workbook(conn, tmp_path):
     from openpyxl import load_workbook
     wb = load_workbook(path)
     assert {"Screen", "TEST", "Exposure", "Flags", "Sources"} <= set(wb.sheetnames)
+
+
+def test_fx_position_and_fx_debt_from_notes(conn):
+    """S3 and S4 from note figures: net FX liability of 300 on total assets 2,500 is -12%: exposed;
+    FX borrowings 300 of gross debt 500 is 60%: exposed."""
+    for f, v in (("fx_monetary_assets", 100), ("fx_monetary_liabilities", 400), ("fx_borrowings", 300)):
+        add_fact(conn, 2, 2024, f, 2024, v)
+    conn.commit()
+    analysis.run(conn, "TEST")
+    sig = {r["signal"]: r for r in conn.execute("SELECT * FROM signals WHERE ticker='TEST'")}
+    assert sig["S3"]["value"] == pytest.approx(-12) and sig["S3"]["points"] == -1
+    assert sig["S4"]["value"] == pytest.approx(60) and sig["S4"]["points"] == -1

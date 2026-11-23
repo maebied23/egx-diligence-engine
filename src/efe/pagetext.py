@@ -4,6 +4,7 @@ Both sources produce the same Word records in PDF points, so table reading does 
 where the words came from. Results are cached in `page_words`.
 """
 import datetime as dt
+import functools
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -89,21 +90,13 @@ def deskew(words: list[Word], slopes: list[float]) -> list[Word]:
     return [Word(w.text, w.x0, w.x1, w.top - slope * w.x0, w.bottom - slope * w.x0, w.conf) for w in words]
 
 
-def from_vision(path: Path, page_no: int, dpi: int = OCR_DPI, fast: bool = False, prep: str | None = None) -> list[Word]:
-    """Word boxes from Apple Vision: each recognised line is split into words, and Vision reports
-    the box of each word's character range. Language correction is off so numbers are not 'fixed'."""
+def vision_results(image, fast: bool = False) -> list:
+    """Apple Vision text observations for a PIL image. Language correction is off so numbers are not 'fixed'."""
     import io
 
     import Vision
-    from Foundation import NSData, NSRange
+    from Foundation import NSData
 
-    pdf = pdfium.PdfDocument(path)
-    try:
-        page = pdf[page_no - 1]
-        w_pt, h_pt = page.get_size()
-        image = prepare(page.render(scale=dpi / 72).to_pil(), prep)
-    finally:
-        pdf.close()
     buf = io.BytesIO()
     image.save(buf, format="PNG")
     data = NSData.dataWithBytes_length_(buf.getvalue(), len(buf.getvalue()))
@@ -116,8 +109,23 @@ def from_vision(path: Path, page_no: int, dpi: int = OCR_DPI, fast: bool = False
     ok, err = handler.performRequests_error_([request], None)
     if not ok:
         raise RuntimeError(f"Vision OCR failed: {err}")
+    return list(request.results() or [])
+
+
+def from_vision(path: Path, page_no: int, dpi: int = OCR_DPI, fast: bool = False, prep: str | None = None) -> list[Word]:
+    """Word boxes from Apple Vision: each recognised line is split into words, and Vision reports
+    the box of each word's character range."""
+    from Foundation import NSRange
+
+    pdf = pdfium.PdfDocument(path)
+    try:
+        page = pdf[page_no - 1]
+        w_pt, h_pt = page.get_size()
+        image = prepare(page.render(scale=dpi / 72).to_pil(), prep)
+    finally:
+        pdf.close()
     words, backwards, forwards, slopes = [], 0, 0, []
-    for obs in request.results() or []:
+    for obs in vision_results(image, fast):
         cand = obs.topCandidates_(1)[0]
         text = cand.string()
         conf = float(cand.confidence()) * 100
@@ -151,6 +159,50 @@ def from_vision(path: Path, page_no: int, dpi: int = OCR_DPI, fast: bool = False
         # boxes are in the image's frame, which reverses reading order. Turn the page the right way up.
         words = [Word(w.text, w_pt - w.x1, w_pt - w.x0, h_pt - w.bottom, h_pt - w.top, w.conf) for w in words]
     return words
+
+
+CELL_DPIS = (600, 450)  # re-readings of single doubtful cells, at two resolutions
+
+
+@functools.lru_cache(maxsize=4)
+def page_image(path: Path, page_no: int, dpi: int):
+    pdf = pdfium.PdfDocument(path)
+    try:
+        page = pdf[page_no - 1]
+        return page.render(scale=dpi / 72).to_pil(), page.get_size()
+    finally:
+        pdf.close()
+
+
+def read_cell(path: Path, page_no: int, box: tuple[float, float, float, float], dpi: int = 600,
+              digits: bool = True) -> str | None:
+    """Re-reading of one table cell: the box (x0, top, x1, bottom in PDF points) is cropped from a
+    high-resolution render and read alone, away from the rule lines and neighbouring figures that confuse a
+    whole-page reading. Returns the text of the line nearest the box's vertical centre, or None.
+    Pages stored upside down (words were turned the right way up) are tried with the box turned too."""
+    from PIL import ImageOps
+
+    image, (w_pt, h_pt) = page_image(path, page_no, dpi)
+    s = dpi / 72
+    x0, top, x1, bottom = box
+    for flipped in (False, True):
+        b = (w_pt - x1, h_pt - bottom, w_pt - x0, h_pt - top) if flipped else (x0, top, x1, bottom)
+        crop = image.crop(tuple(int(v * s) for v in b))
+        if flipped:
+            crop = crop.rotate(180)
+        crop = ImageOps.expand(crop, border=int(6 * s), fill="white")
+        pieces = []
+        for obs in vision_results(crop):
+            bb = obs.boundingBox()
+            cy = 1 - (bb.origin.y + bb.size.height / 2)  # 0 = top of the padded crop
+            pieces.append((abs(cy - 0.5), bb.origin.x, obs.topCandidates_(1)[0].string()))
+        if not pieces:
+            continue
+        nearest = min(p[0] for p in pieces)
+        text = " ".join(t for d, _, t in sorted(pieces, key=lambda p: p[1]) if d - nearest < 0.12)
+        if any(ch.isdigit() for ch in text) or (not digits and any(ch.isalpha() for ch in text)):
+            return text
+    return None
 
 
 _open_pdf: tuple[Path, "pdfplumber.PDF"] | None = None

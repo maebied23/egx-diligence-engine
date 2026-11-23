@@ -26,10 +26,10 @@ def parse_number(token: str) -> float | None:
         return 0.0
     negative = "(" in s or ")" in s or s.startswith("-") or s.startswith("−")
     core = s.replace("(", "").replace(")", "").lstrip("-−").strip()
-    # OCR sometimes reads the last group separator as a dot ("1 687 062.873"). A dot before exactly
+    # OCR sometimes reads a group separator as a dot ("1 687 062.873", "1.034 217 397"). A dot before exactly
     # three digits, after space-separated three-digit groups, is a separator: real decimals in
     # statements (per-share figures) are not printed in digit groups.
-    if re.fullmatch(r"\d{1,3}( \d{3})+\.\d{3}", core):
+    if re.fullmatch(r"\d{1,3}( \d{3})+\.\d{3}|\d{1,3}\.\d{3}( \d{3})+", core):  # also '1.034 217 397'
         core = core.replace(".", " ")
     core = _SEP.sub("", core)
     if not _NUMBER.match(core):

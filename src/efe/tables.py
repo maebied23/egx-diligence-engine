@@ -10,6 +10,7 @@ Works on positioned words from either the text layer or OCR:
 Nothing is inferred: a cell that cannot be parsed keeps its raw text and value None.
 """
 import re
+import statistics
 from dataclasses import dataclass, field
 
 from efe.numbers import is_note_ref, looks_numeric, parse_number
@@ -50,6 +51,9 @@ class Table:
     rows: list[Row]
     unit_hint: str | None        # header text mentioning units/currency, if found
     label_only_lines: int = 0    # lines with a label but no values (section headers, or missing numbers)
+    centres: list[float] = field(default_factory=list)  # x centre of each period column (PDF points)
+    half_gap: float = 60.0       # half the distance between neighbouring columns
+    slope: float = 0.0           # tilt removed by level(); a word's printed top = top + slope * x0
 
 
 def group_lines(words: list[Word]) -> list[list[Word]]:
@@ -124,7 +128,47 @@ def merge_value_lines(lines: list[list[Word]], value_left: float) -> list[list[W
     return [line for line, m in zip(out, merged) if not m]
 
 
-def read_table(words: list[Word]) -> Table | None:
+MIN_TILT = 0.004  # below this, 300 points of width move a row by less than 1.2 points
+
+
+def column_tilt(words: list[Word]) -> tuple[float, int]:
+    """The page's tilt measured on the figures themselves: a row's figures in neighbouring period columns
+    sit on one printed line, so their height difference over their distance is the slope. Needs no long
+    OCR line (the deskew in pagetext does), which Vision does not give when it reads labels and figures
+    as separate lines. Returns (median slope, number of pairs)."""
+    lines = group_lines(words)
+    centres, _, header_idx = find_columns(lines)
+    if len(centres) < 2:
+        return 0.0, 0
+    half = (centres[1] - centres[0]) / 2
+    below = max(w.bottom for w in lines[header_idx])
+    nums = [w for w in words if looks_numeric(w.text) and w.top > below]
+    height = statistics.median(w.bottom - w.top for w in words)
+    by_col = [[w for w in nums if abs((w.x0 + w.x1) / 2 - c) < half] for c in centres]
+    pairs = []
+    for left, right in zip(by_col, by_col[1:]):
+        for a in left:
+            near = [b for b in right if abs(b.cy - a.cy) < 0.5 * height]
+            if near:
+                b = min(near, key=lambda b: abs(b.cy - a.cy))
+                pairs.append((b.cy - a.cy) / ((b.x0 + b.x1) / 2 - (a.x0 + a.x1) / 2))
+    return (statistics.median(pairs), len(pairs)) if pairs else (0.0, 0)
+
+
+def level(words: list[Word]) -> tuple[list[Word], float]:
+    """Straighten an OCR'd page the whole-line deskew missed (measured on LCSW FY2022 balance sheet:
+    1.9% tilt put every figure half a line below its label). Text-layer pages are not levelled: there a
+    column printed a little lower is layout, not tilt."""
+    slope, n = column_tilt(words)
+    if n < 10 or abs(slope) < MIN_TILT:
+        return words, 0.0
+    return [Word(w.text, w.x0, w.x1, w.top - slope * w.x0, w.bottom - slope * w.x0, w.conf) for w in words], slope
+
+
+def read_table(words: list[Word], levelled: bool = False) -> Table | None:
+    slope = 0.0
+    if levelled:
+        words, slope = level(words)
     lines = group_lines(words)
     centres, years, header_idx = find_columns(lines)
     if not centres:
@@ -196,7 +240,17 @@ def read_table(words: list[Word]) -> Table | None:
         elif label and close_above and pending_label[-1][-1:] in (",", "-"):
             label = pending_label[-1] + " " + label
         pending_label = []
-        if label and SECTION.fullmatch(label.strip()) and not label.lower().startswith("total"):
-            section = label
         rows.append(Row(i, label, note, cells, line_text, section, line[0].top, line))
-    return Table(years, rows, unit_hint, label_only)
+        # A line with figures named after a section ('Non-Current Liabilities 477 618 247') is that section's
+        # subtotal, so the next lines belong to the next section; likewise after total equity. A heading
+        # that OCR misread ('Don-Current') is then not needed (LCSW FY2022). A heading read later wins.
+        low = label.lower().strip()
+        if re.fullmatch(r"(total )?non[- ]?current assets", low):
+            section = "Current assets (after the non-current subtotal)"
+        elif re.fullmatch(r"(total )?non[- ]?current liabilities", low):
+            section = "Current liabilities (after the non-current subtotal)"
+        elif re.fullmatch(r"total (shareholders'? )?equity", low):
+            section = "Non-current liabilities (after total equity)"
+        elif re.fullmatch(r"(total )?current (assets|liabilities)", low):
+            section = None
+    return Table(years, rows, unit_hint, label_only, centres, half_gap, slope)

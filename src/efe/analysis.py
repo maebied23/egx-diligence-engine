@@ -102,8 +102,11 @@ class Book:
     def fact(self, f: str, year: int, doc_year: int | None = None) -> V:
         """Value of a field for a fiscal year: from that year's filing, else the next filing's comparative.
         doc_year pins the filing (used for year-on-year changes, so both years come from one document)."""
+        why = None
         for dy in ([doc_year] if doc_year else [year, year + 1]):
             r = self.facts.get((dy, f, year))
+            if r is not None and r["value_normalised"] is None and r["missing_reason"]:
+                why = why or f"{f} {year}: {r['missing_reason']}"
             if r is None or r["value_normalised"] is None:
                 continue
             notes, conf = [], r["confidence"]
@@ -113,7 +116,7 @@ class Book:
             if dy != year:
                 notes.append(f"{f} {year} taken from the comparative column of the FY{dy} filing")
             return V(r["value_normalised"], f"{f}={fmt(r['value_normalised'])}", [r["id"]], conf, notes=notes)
-        return missing(f"{f} {year} not extracted")
+        return missing(why or f"{f} {year} not extracted")
 
     def has(self, f: str, year: int, doc_year: int | None = None) -> bool:
         return self.fact(f, year, doc_year).ok
@@ -380,6 +383,61 @@ def devaluation_changes(book: Book, metric_fn) -> list[tuple[int, float, str]]:
     return out
 
 
+FX_POSITION_MATERIAL = 0.02  # net position below 2% of total assets counts as neutral (provisional, docs/04)
+FX_DEBT_LOW, FX_DEBT_HIGH = 0.05, 0.25  # share of borrowings in foreign currency (docs/04: above 25% exposed)
+
+
+def latest_years(book: Book) -> list[int]:
+    return [y for y in sorted(book.docs, reverse=True) if y not in book.unreliable]
+
+
+def fx_position_signal(book: Book) -> Signal:
+    """S3: foreign-currency monetary assets less liabilities (currency risk note), latest reliable year,
+    as a share of total assets. A net liability loses when the pound falls."""
+    name = "Net foreign-currency monetary position (% of total assets)"
+    rows, reasons = [], []
+    for y in latest_years(book):
+        a, l, ta = (book.fact(f, y, y) for f in ("fx_monetary_assets", "fx_monetary_liabilities", "total_assets"))
+        if a.ok and l.ok and ta.ok and ta.value > 0:
+            rows.append((y, a, l, ta))
+        else:
+            reasons.append(next(v.reason for v in (a, l, ta) if not v.ok))
+    if not rows:
+        return Signal("S3", name, None, None, "", reason=reasons[0] if reasons else "no reliable year")
+    y, a, l, ta = rows[0]
+    share = (a.value - l.value) / ta.value
+    pts = 0 if abs(share) < FX_POSITION_MATERIAL else (1 if share > 0 else -1)
+    ev = "; ".join(f"FY{yy} assets {fmt(aa.value)} less liabilities {fmt(ll.value)} = {fmt(aa.value - ll.value)} "
+                   f"({100 * (aa.value - ll.value) / tt.value:+.1f}% of total assets)" for yy, aa, ll, tt in rows)
+    return Signal("S3", name, 100 * share, pts,
+                  f"latest reliable year (FY{y}); net liability: exposed; net asset: protected; "
+                  f"within {FX_POSITION_MATERIAL:.0%} of total assets: neutral. EGP equivalents as printed in the note",
+                  ev, weakest([a.conf, l.conf]))
+
+
+def fx_debt_signal(book: Book, metrics: dict[int, dict]) -> Signal:
+    """S4: borrowings in foreign currency (borrowings or currency risk note) over gross debt."""
+    name = "Share of borrowings in foreign currency"
+    rows, reasons = [], []
+    for y in latest_years(book):
+        fx = book.fact("fx_borrowings", y, y)
+        gross = metrics.get(y, {}).get("gross_debt", (missing("gross debt not computed"),))[0]
+        if fx.ok and gross.ok and gross.value > 0:
+            rows.append((y, fx, gross))
+        else:
+            reasons.append(fx.reason if not fx.ok else gross.reason)
+    if not rows:
+        return Signal("S4", name, None, None, "", reason=reasons[0] if reasons else "no reliable year")
+    y, fx, gross = rows[0]
+    share = fx.value / gross.value
+    pts = -1 if share > FX_DEBT_HIGH else (1 if share < FX_DEBT_LOW else 0)
+    return Signal("S4", name, 100 * share, pts,
+                  f"latest reliable year (FY{y}); above {FX_DEBT_HIGH:.0%}: exposed (export share not yet read, so a "
+                  f"match with FX revenue is not tested); below {FX_DEBT_LOW:.0%}: protected; between: neutral",
+                  "; ".join(f"FY{yy} {fmt(f.value)} of {fmt(g.value)} = {100 * f.value / g.value:.1f}%" for yy, f, g in rows),
+                  weakest([fx.conf, gross.conf]))
+
+
 def signals(book: Book, metrics: dict[int, dict]) -> list[Signal]:
     s = []
 
@@ -416,10 +474,10 @@ def signals(book: Book, metrics: dict[int, dict]) -> list[Signal]:
     else:
         s.append(Signal("S2", "FX result as % of EBITDA before FX (devaluation years)", None, None, "",
                         reason="no FX line or EBITDA in a devaluation year"))
-    for code, name, src in [("S3", "Net foreign-currency monetary position", "currency risk note"),
-                            ("S4", "Share of borrowings in foreign currency", "borrowings note"),
-                            ("S5", "Export or FX-linked share of revenue", "revenue or segment note")]:
-        s.append(Signal(code, name, None, None, "", reason=f"{src} tables are not read by the engine yet"))
+    s.append(fx_position_signal(book))
+    s.append(fx_debt_signal(book, metrics))
+    s.append(Signal("S5", "Export or FX-linked share of revenue", None, None, "",
+                    reason="revenue or segment note tables are not read by the engine yet"))
 
     def dio(y, dy):
         inv, cos = book.fact("inventory", y, dy), book.fact("cost_of_sales", y, dy)
@@ -480,6 +538,16 @@ def red_flags(book: Book, metrics: dict[int, dict]) -> list[tuple]:
     """(year, severity, category, finding, question, evidence)"""
     out = []
     for y, d in sorted(book.docs.items()):
+        a, l, ta = (book.fact(f, y, y) for f in ("fx_monetary_assets", "fx_monetary_liabilities", "total_assets"))
+        if a.ok and l.ok and ta.ok and ta.value > 0 and (l.value - a.value) / ta.value >= 0.05:
+            out.append((y, "medium", "fx", f"Net foreign-currency liability FY{y}: {fmt(l.value - a.value)} EGP "
+                        f"({100 * (l.value - a.value) / ta.value:.0f}% of total assets)",
+                        "Which currencies, what is hedged, and how much USD revenue covers it?",
+                        f"currency risk note: assets {fmt(a.value)}, liabilities {fmt(l.value)}"))
+        elif not a.ok and not l.ok and "no figure found" in (a.reason or ""):
+            out.append((y, "low", "fx", f"FY{y} notes give no figures for foreign-currency balances",
+                        "Ask for the FX position by currency (cash, receivables, payables, borrowings) at each year-end.",
+                        a.reason))
         op = (d["audit_opinion"] or "").lower()
         if op and not op.startswith("unqualified"):
             out.append((y, "high", "audit", f"Audit opinion FY{y}: {d['audit_opinion']} ({d['auditor'] or 'auditor not read'})",

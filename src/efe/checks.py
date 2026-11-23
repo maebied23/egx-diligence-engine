@@ -19,7 +19,8 @@ IDENTITIES = [
     ("total_equity_and_liabilities = equity + liabilities", "total_equity_and_liabilities", ["total_equity", "total_liabilities"]),
     ("total_assets = total_equity_and_liabilities", "total_assets", ["total_equity_and_liabilities"]),
     ("net_change_in_cash = cfo + cfi + cff", "net_change_in_cash", ["cfo", "cfi", "cff"]),
-    ("cash_end = cash_begin + net_change_in_cash (+ fx effect)", "cash_end", ["cash_begin", "net_change_in_cash", "?fx_effect_on_cash"]),
+    ("cash_end = cash_begin + net_change_in_cash (+ fx effect, + restricted cash change)", "cash_end",
+     ["cash_begin", "net_change_in_cash", "?fx_effect_on_cash", "?restricted_cash_change"]),
     ("profit_before_tax (cash flow) = profit_before_tax (income statement)", "profit_before_tax_cf", ["profit_before_tax"]),
 ]
 # Cross-statement ties that legitimately differ when overdrafts are part of cash in the cash flow.

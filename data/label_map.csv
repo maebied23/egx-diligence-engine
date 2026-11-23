@@ -43,8 +43,8 @@ balance_sheet,,^retained earnings|^accumulated (losses|profits)|^retained (losse
 balance_sheet,,^equity attributable to (the )?(holding|parent|owners|shareholders)|^total equity \(company.?s shareholders\),equity_parent,
 balance_sheet,,^non[- ]?controlling (shareholders.? )?interests?$|^minority interests?$,non_controlling_interest_equity,
 balance_sheet,,^total (shareholders.? )?equity$,total_equity,
-balance_sheet,,"^non[- ]current portion of lease liabilities|^lease liabilities.{0,3}non[- ]current",lease_liabilities_non_current,
-balance_sheet,,"^current portion of lease liabilities|^lease liabilities.{0,3}current",lease_liabilities_current,
+balance_sheet,,"^non[- ]?current portion of lease( liabilities| contracts?)?$|^lease liabilities.{0,3}non[- ]current",lease_liabilities_non_current,
+balance_sheet,,"^current portion of lease( liabilities| contracts?)?$|^lease liabilities.{0,3}current",lease_liabilities_current,
 balance_sheet,non[- ]?current liabilities,^lease liabilities$|^lease contracts? liabilit(y|ies)$|^accrued .*lease contract,lease_liabilities_non_current,
 balance_sheet,^current liabilities,^lease liabilities$|^lease contracts? liabilit(y|ies)$,lease_liabilities_current,
 balance_sheet,,^current portion of (long[- ]term )?(loans|borrowings),current_portion_long_term_debt,
@@ -84,6 +84,7 @@ cash_flow,,^(current )?income tax(es)? paid|^paid income tax,income_tax_paid,
 cash_flow,,^cash (flows )?generated from operat(ing activities|ions)$|^profit generated from operations$|^cash generated from operations,cash_generated_from_operations,Before interest and tax; not the net operating cash flow
 cash_flow,operating,foreign currenc(y|ies) (translation )?differences|translation reserve and foreign currency|unreali[sz]ed (foreign )?exchange|^exchanged? foreign currency,fx_adjustment_cf,Non-cash FX adjustment in operating cash flow: evidence for exposure signal S2
 cash_flow,,effect of (foreign )?exchange|exchanged? foreign currency|foreign (currency )?exchange differences on cash,fx_effect_on_cash,Effect of exchange rates on cash held; outside operating activities
+cash_flow,,^change in (restricted|blocked) (time )?deposits,restricted_cash_change,Reconciling line between opening and closing cash (LCSW FY2022); not a cash flow of the period
 cash_flow,,foreign currenc(y|ies) (translation )?differences|translation reserve and foreign currency|unreali[sz]ed (foreign )?exchange,fx_adjustment_cf,Fallback when no cash-flow section was detected
 cash_flow,,^proceeds from (the )?sale of (property|fixed assets|ppe),proceeds_sale_ppe,
 cash_flow,,^(payments?|repayments?) of (long[- ]term )?loans|^loans repaid,loans_repaid,

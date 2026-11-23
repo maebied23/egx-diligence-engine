@@ -108,3 +108,52 @@ def test_deskew_keeps_right_hand_numbers_on_their_row():
         words.append(Word("123", 500, 520, y + slope * 500, y + 9 + slope * 500))
     fixed = deskew(words, [slope] * 6)
     assert abs(fixed[0].top - fixed[1].top) < 0.5 and abs(fixed[2].top - fixed[3].top) < 0.5
+
+
+def test_level_puts_figures_back_on_their_labels():
+    """A 2% tilt that the whole-line deskew missed: each row's figures print about half a line below its
+    label (LCSW FY2022 balance sheet). Measured from neighbouring columns, the tilt is removed."""
+    slope, w = 0.02, []
+    w += line(100, ("Note", 338), ("2022", 403), ("2021", 485))
+    for k, (label, a, b) in enumerate([("Loans", "8 240 932", "24 597 468"), ("Provisions", "21 349 926", "8 371 135"),
+                                       ("Deferred", "110 881 391", "13 357 906"), ("Accrued", "41 393 653", "39 950 980"),
+                                       ("Trade", "933 175 828", "673 725 980"), ("Other", "48 921 233", "28 057 917")]):
+        top = 130 + 11 * k
+        w += line(top, (label, 85))
+        for text, xx in ((a, 380), (b, 470)):
+            for part in text.split():
+                w += line(top + slope * xx, (part, xx))
+                xx += 6 * len(part) + 3
+    assert tables.read_table(w) is not None
+    t = tables.read_table(w, levelled=True)
+    assert t.slope == pytest.approx(slope, abs=0.002)
+    got = {r.label: [c.value for c in r.cells] for r in t.rows}
+    assert got["Provisions"] == [21349926, 8371135] and got["Other"] == [48921233, 28057917]
+
+
+def test_level_leaves_a_straight_page_alone():
+    t = tables.read_table(statement_words(), levelled=True)
+    assert t.slope == 0.0
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("(213 680 194)", -213680194), ("17 897 417)", -17897417), ("'115 782 865)", -115782865),
+    ("61 217 529", 61217529), ("З 242 661", None), ("P15 940 576", None), ("---", None), (None, None)])
+def test_cell_reading_must_be_a_whole_number(text, expected):
+    from efe.extract import parse_cell
+    got = parse_cell(text)
+    assert (got[1] if got else None) == expected
+
+
+def test_subtotal_line_closes_its_section():
+    """'Non-Current Liabilities' with figures is a subtotal: the 'Loans' after it are current, even when
+    the heading 'Current Liabilities' was not read (LCSW FY2022)."""
+    w = line(100, ("Note", 338), ("2022", 403), ("2021", 485))
+    w += line(120, ("Total", 85), ("Equity", 115)) + line(120, ("1900", 400)) + line(120, ("1543", 480))
+    w += line(132, ("Loans", 85)) + line(132, ("8240", 400)) + line(132, ("2459", 480))
+    w += line(144, ("Non-Current", 85), ("Liabilities", 155)) + line(144, ("4776", 400)) + line(144, ("2797", 480))
+    w += line(156, ("Loans", 85)) + line(156, ("3033", 400)) + line(156, ("1458", 480))
+    rows = tables.read_table(w).rows
+    loans = [r for r in rows if r.label == "Loans"]
+    assert mapping.map_label("balance_sheet", "Loans", loans[0].section) == "long_term_borrowings"
+    assert mapping.map_label("balance_sheet", "Loans", loans[1].section) == "current_portion_long_term_debt"
