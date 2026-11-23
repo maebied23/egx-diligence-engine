@@ -21,7 +21,7 @@ Each signal is computed per fiscal year. "Devaluation years" are the fiscal year
 | S4 | Foreign-currency debt | Share of borrowings in USD/EUR | Above 25% with mainly EGP revenue | None, or matched by FX revenue |
 | S5 | Export or FX-linked revenue | Export sales / total revenue (segment or revenue notes) | Below 10% | Above 25% |
 | S6 | Import activity indicators | Letters of credit outstanding; mentions of imported raw materials; inventory build-up in devaluation years (DIO change) | Large LCs, rising DIO | None |
-| S7 | Real revenue growth | Nominal growth deflated by CAPMAS CPI over the period | Negative real growth | Positive real growth |
+| S7 | Real revenue growth | Nominal growth deflated by CPI (World Bank series) over the period | Negative real growth | Positive real growth |
 
 ## Rules
 

@@ -30,7 +30,7 @@ During the 2022 to 2023 devaluations, Egypt allowed special accounting treatment
 
 ## 3. Devaluation timeline (analysis windows)
 
-Use these as event dates for before/after analysis. Pre-2026 rates are approximate and must be replaced with official CBE data before use.
+Use these as event dates for before/after analysis. Rates shown are approximate; the analysis uses the World Bank annual average USD/EGP series (`data/macro/`), not these figures.
 
 | Event | Date | Approximate USD/EGP | Source to confirm |
 | --- | --- | --- | --- |
@@ -43,7 +43,7 @@ Use these as event dates for before/after analysis. Pre-2026 rates are approxima
 
 Also note the **2023 FX shortage**: a parallel market and delays obtaining dollars for imports and dividend repatriation. Companies built inventory and relied on letters of credit.
 
-## 4. Macro facts as of November 2026 (refresh before publishing)
+## 4. Macro facts as of November 2026
 
 - CBE raised rates 100 bps on 29 October 2026, its first hike since March 2024: overnight deposit 20%, lending 21%. Inflation target 7% (plus or minus 2%) moved to Q4 2027.
 - Urban headline inflation was 13.9% in September 2026.
@@ -54,7 +54,7 @@ Also note the **2023 FX shortage**: a parallel market and delays obtaining dolla
 
 | Standard PE analysis | Egypt overlay | Why |
 | --- | --- | --- |
-| Revenue growth | Split into real and nominal using CAPMAS CPI; where disclosed, split price and volume | Inflation of 10 to 35% can make shrinking businesses look like growth stories |
+| Revenue growth | Split into real and nominal using CPI (World Bank series); where disclosed, split price and volume | Inflation of 10 to 35% can make shrinking businesses look like growth stories |
 | Gross margin trend | Compare the fiscal year containing each devaluation with the prior year | Tests pricing power and import dependence |
 | Net debt | Split by currency (EGP vs USD/EUR) | Dollar debt with pound revenue is the most dangerous mismatch |
 | Working capital | Track inventory build-up around devaluations; government receivables separately | Stockpiling and slow state payers absorb cash |
