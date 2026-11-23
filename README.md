@@ -60,7 +60,7 @@ Revenue as extracted, EGP millions. USD growth uses the World Bank average USD/E
 
 Inflation-adjusted growth and USD growth tell different stories, because Egyptian prices lagged the currency. A local lender may be satisfied with positive real growth. A USD fund marks its returns in dollars, and for two years running every one of these businesses got smaller in dollars.
 
-These figures show what the engine produces. They are not an investment view. The exposure profiles are **not yet quotable**: the 2022 filings, which cover the key devaluation year, fail too many checks for all three companies, and three of the seven signals need note tables that are not read yet (see Limitations).
+These figures show what the engine produces. They are not an investment view. The exposure profiles are **not yet quotable**: the 2022 filings, which cover the key devaluation year, fail too many checks for all three companies, and three of the seven signals need note tables that are not read yet (see Roadmap).
 
 ## How it works
 
@@ -88,14 +88,6 @@ Every stored value records its file, page, original text, extraction method and 
 - The key goal is zero unflagged errors, since a wrong number nobody questions is the one that reaches an investment committee. A regression test fails the build if accuracy drops below 95% or any wrong value goes unflagged.
 - **The answer key was read from the page images by an AI model (`checked_by = claude-visual`). No person has confirmed it yet.** Treat the 97.5% as provisional until a hand check is done.
 - 7 of the 17 filing-years fail five or more arithmetic checks. These are mostly OCR misreads on poor scans. In one case (MCQE FY2024) the printed figures are misaligned with their labels in the filing itself. These years are shaded and excluded from the exposure signals rather than repaired.
-
-## Limitations
-
-- **English filings only.** Arabic OCR needs Tesseract, which is not installed yet. Smaller EGX companies publish only in Arabic.
-- **Notes to the accounts are not read.** Debt by currency, the net FX position, export share, letters of credit and covenants are therefore still missing. Exposure signals S3–S5 wait on these.
-- **Three companies, one sector.** No peer medians yet.
-- **Exposure thresholds are starting points.** They are not yet calibrated against hand-classified companies.
-- **No market data.** There is no share price or EV/EBITDA yet.
 
 ## Roadmap
 
