@@ -1,0 +1,103 @@
+statement,section,pattern,field,comment
+income_statement,,^(net )?(sales|revenues?|turnover|operating revenues?)( \(net\))?$|^revenues? from contracts with customers|^(net )?sales revenues?$,revenue,
+income_statement,,^cost of (sales|revenues?|goods sold)|^cost of operating revenues?,cost_of_sales,
+income_statement,,^gross (profit|loss|profit ?/ ?\(?loss\)?|\(loss\) ?/ ?profit),gross_profit,
+income_statement,,"^selling(,)? (and|&) (distribution|marketing) expenses|^selling expenses|^distribution (and selling )?expenses",selling_expenses,
+income_statement,,^general (and|&) administrative expenses|^administrative (and general )?expenses,admin_expenses,
+income_statement,,^other (operating )?income$|^other revenues?$|^other operating revenues?$,other_operating_income,
+income_statement,,^other (operating )?expenses$,other_operating_expenses,
+income_statement,,^(expected credit loss(es)?|impairment (in|on|of) (trade|receivables)),impairment_receivables,
+income_statement,,^(profit|loss|income|results?|\(loss\) ?/ ?profit|profit ?/ ?\(loss\)) from operat(ing activities|ions)$|^(net )?operating (profit|loss|income|profit ?/ ?\(loss\))$,operating_profit,
+income_statement,,^net finance (income|costs|expenses|\(?expenses\)? ?/ ?income|income ?/ ?\(?expenses\)?|\(costs\) ?/ ?income)$,net_finance_result,Reported net line; components come from the finance note
+income_statement,,^operating lease\W*interest|^interest (on|of) lease|^finance (interest )?expenses? on lease,lease_interest,Interest on lease liabilities
+income_statement,,^finance (costs|expenses)$|^financing (costs|expenses)$|^interest expenses?$,finance_costs,
+income_statement,,^finance income$|^interest income$|^credit interest$,finance_income,
+income_statement,,(foreign )?(currency|exchange) (differences|gains?|loss(es)?|translation differences)|^(gains?|loss(es)?) (from|on) (foreign )?(currency|exchange)|^foreign currency exchange$,fx_gain_loss_pl,Check OCI and PPE notes too (EAS 13 Annex C)
+income_statement,,"share (of|from) (the )?(profit|results?|loss)? ?(of|from)? ?(investments? in )?(equity.{0,2}accounted|associates)",share_of_associates,
+income_statement,,^(net )?(profit|loss|income|\(loss\) ?/ ?profit|profit ?/ ?\(loss\))( for the (year|period))? before (income )?tax,profit_before_tax,
+income_statement,,^deferred (income )?tax,deferred_tax_pl,
+income_statement,,^(current )?income tax( expense)?$|^tax(ation)? expense$|^income tax(es)?$,income_tax,
+income_statement,,^(net )?(profit|loss|income|\(loss\) ?/ ?profit|profit ?/ ?\(loss\))s? (for|of|or) the (year|period)( after (income )?tax(es)?)?$|^(net )?(profit|loss)s? for the (year|period) after (income )?tax,net_profit,or the year' is a typo seen in Lecico FY2024
+income_statement,,^(shareholders|owners|equity holders) of the (holding|parent) company|^attributable to (the )?(owners|shareholders|equity holders) of the (parent|holding)|^(distributed as follow\W*)?controlling shareholders,net_profit_parent,
+income_statement,,^non[- ]?controlling (shareholders.? )?interests?|^minority interests?$,non_controlling_interest,
+oci,,^total comprehensive income( for the (year|period))?$,total_comprehensive_income,
+oci,,translation differences|foreign (operations|currency) translation|exchange differences on translat|currency translation,fx_items_oci,Translation of foreign subsidiaries; Annex C items are a separate search in the notes
+balance_sheet,,^goodwill$,goodwill,
+balance_sheet,,^deferred tax assets?,deferred_tax_assets,
+balance_sheet,,^(investments?|assets) held for sale,assets_held_for_sale,
+balance_sheet,,"^property,? plant (and|&) equipment|^fixed assets( ?- ?net| \(net\))?$",ppe,
+balance_sheet,,^projects? under (construction|progress)|^capital work in progress|^assets under construction,projects_in_progress,
+balance_sheet,,^intangible assets,intangibles,
+balance_sheet,,^right of use assets?|^assets? right (of|to) use,right_of_use_assets,
+balance_sheet,,^equity.?accounted investees|^investments? in associates,investments_associates,
+balance_sheet,,^(total )?non[- ]?current assets$,total_non_current_assets,
+balance_sheet,,^inventor(y|ies)$,inventory,
+balance_sheet,,"^trade(,)? (and|notes and) other receivables|^trade (receivables|debtors) and other|^debtors and other",trade_and_other_receivables,Includes non-trade receivables; pure trade receivables come from the note
+balance_sheet,,^(trade receivables|customers|accounts receivable|trade and notes receivables?)( \(net\))?$,trade_receivables,
+balance_sheet,,^cash (and|&) cash equivalents?$|^cash (on hand )?(and )?(at )?banks?$|^cash and bank balances$|^cash on hand and at banks,cash,
+balance_sheet,,^treasury bills,treasury_bills,
+balance_sheet,,^(total )?current assets$,total_current_assets,
+balance_sheet,,^total assets$,total_assets,
+balance_sheet,,^(issued and paid[- ]up|issued & paid up|paid[- ]up) capital,paid_in_capital,
+balance_sheet,,^retained earnings|^accumulated (losses|profits)|^retained (losses|earning)s?$,retained_earnings,
+balance_sheet,,^equity attributable to (the )?(holding|parent|owners|shareholders)|^total equity \(company.?s shareholders\),equity_parent,
+balance_sheet,,^non[- ]?controlling (shareholders.? )?interests?$|^minority interests?$,non_controlling_interest_equity,
+balance_sheet,,^total (shareholders.? )?equity$,total_equity,
+balance_sheet,,"^non[- ]current portion of lease liabilities|^lease liabilities.{0,3}non[- ]current",lease_liabilities_non_current,
+balance_sheet,,"^current portion of lease liabilities|^lease liabilities.{0,3}current",lease_liabilities_current,
+balance_sheet,non[- ]?current liabilities,^lease liabilities$|^lease contracts? liabilit(y|ies)$|^accrued .*lease contract,lease_liabilities_non_current,
+balance_sheet,^current liabilities,^lease liabilities$|^lease contracts? liabilit(y|ies)$,lease_liabilities_current,
+balance_sheet,,^current portion of (long[- ]term )?(loans|borrowings),current_portion_long_term_debt,
+balance_sheet,non[- ]?current liabilities,^(long[- ]term )?(loans|borrowings)$,long_term_borrowings,
+balance_sheet,^current liabilities,^loans$|^borrowings$,current_portion_long_term_debt,Short-term loans vs current portion: confirm in borrowings note
+balance_sheet,,^(banks? )?credit facilities|^bank overdrafts?|^banks? overdraft|^short[- ]term (loans|borrowings),short_term_borrowings,
+balance_sheet,,^deferred tax liabilit,deferred_tax_liabilities,
+balance_sheet,,"^long[- ]term notes payable|^notes payable.{0,3}long",long_term_notes_payable,Debt-like candidate
+balance_sheet,,^(accrued |current )?income tax (payable|liabilit)|^accrued income tax,income_tax_payable,
+balance_sheet,non[- ]?current liabilities,^trade and notes payables?$|^notes payables?$,long_term_notes_payable,Non-current notes payable to suppliers: debt-like candidate
+balance_sheet,^current liabilities,^(trade payables|suppliers|accounts payable)$|^suppliers and notes payables?$|^trade and notes payables?$,trade_payables,Trade and notes payable (no other payables included)
+balance_sheet,,^dividends? payable,dividends_payable,Debt-like item
+balance_sheet,,^due (from|by) related part,due_from_related_parties,
+balance_sheet,,^due to related part,due_to_related_parties,
+balance_sheet,,^investments? in (a )?joint ventures?,investments_associates,Joint ventures and associates
+balance_sheet,,^reserves$|^legal reserve,reserves,
+balance_sheet,,"^trade(,)? (and|notes and) other payables|^creditors and other|^suppliers and other",trade_and_other_payables,Includes non-trade payables; pure trade payables come from the note
+balance_sheet,,^(trade payables|suppliers|accounts payable)$,trade_payables,
+balance_sheet,,^(advances|down payments) from customers|^customers? advances|^contract liabilities|^receivables? ?[-–]? ?advanced? payments,customer_advances,MCQE prints customer advances as 'Receivables - advanced payments' under current liabilities
+balance_sheet,non[- ]?current liabilities,^provisions?$,provisions_non_current,
+balance_sheet,^current liabilities,^provisions?$,provisions_current,
+balance_sheet,,^provisions?$,provisions,Section not identified
+balance_sheet,,^(total )?non[- ]?current liabilities$,total_non_current_liabilities,
+balance_sheet,,^(total )?current liabilities$,total_current_liabilities,
+balance_sheet,,^total liabilities$,total_liabilities,
+balance_sheet,,^total (equity and liabilities|liabilities and (shareholders.? )?equity),total_equity_and_liabilities,
+cash_flow,,^net (profit|income)( for the (year|period))? before (income )?tax|^profit before tax,profit_before_tax_cf,
+cash_flow,,(depreciation|amorti[sz]ation) of (assets? )?right (of|to) use|right (of|to) use assets? (depreciation|amorti[sz]ation),depreciation_right_of_use,Lease asset depreciation; part of D&A for EBITDA under EAS 49 / IFRS 16
+cash_flow,,depreciation,depreciation,
+cash_flow,,amorti[sz]ation(?!.*right (of|to) use),amortisation,
+cash_flow,,^change in inventor,change_in_inventory,
+cash_flow,,"^change in trade.{0,25}receivables",change_in_receivables,
+cash_flow,,"^change in trade.{0,25}payables",change_in_payables,
+cash_flow,,^(dividends? paid to employees?|payments? of employees?.? dividends?|employees?.? (profit share|dividends?) paid),employee_profit_share_paid,Employee profit share (Egyptian law); not a shareholder dividend
+cash_flow,,^interest (expenses )?paid|^paid (debit )?interests?,interest_paid,
+cash_flow,,^(current )?income tax(es)? paid|^paid income tax,income_tax_paid,
+cash_flow,,^cash (flows )?generated from operat(ing activities|ions)$|^profit generated from operations$|^cash generated from operations,cash_generated_from_operations,Before interest and tax; not the net operating cash flow
+cash_flow,operating,foreign currenc(y|ies) (translation )?differences|translation reserve and foreign currency|unreali[sz]ed (foreign )?exchange|^exchanged? foreign currency,fx_adjustment_cf,Non-cash FX adjustment in operating cash flow: evidence for exposure signal S2
+cash_flow,,effect of (foreign )?exchange|exchanged? foreign currency|foreign (currency )?exchange differences on cash,fx_effect_on_cash,Effect of exchange rates on cash held; outside operating activities
+cash_flow,,foreign currenc(y|ies) (translation )?differences|translation reserve and foreign currency|unreali[sz]ed (foreign )?exchange,fx_adjustment_cf,Fallback when no cash-flow section was detected
+cash_flow,,^proceeds from (the )?sale of (property|fixed assets|ppe),proceeds_sale_ppe,
+cash_flow,,^(payments?|repayments?) of (long[- ]term )?loans|^loans repaid,loans_repaid,
+cash_flow,,^proceeds from (long[- ]term )?loans,loans_drawn,
+cash_flow,,"(change in|net proceeds from|proceeds from|paid to).{0,25}(credit facilities|overdraft|credit banks)",change_in_credit_facilities,
+cash_flow,,^(payments?|repayments?) of lease liabilities,lease_payments,
+cash_flow,,^cash (flows )?(generated )?from operat(ing activities|ions)$|^cash generated from operations|^net operating profits?$,cash_generated_from_operations,Before interest and tax; the net operating cash flow is the line starting 'Net cash'
+cash_flow,,"^net cash .{0,40}operating activities",cfo,
+cash_flow,,^\(?payments?\)? (for|to|in) (the )?((acquisition|purchase) of )?(property|fixed assets|ppe)|^(acquisition|purchase)s? of (property|fixed assets|ppe),capex,
+cash_flow,,^\(?payments?\)? (for|in) (projects?|assets?) under construction|^\(?payments?\)? for (projects|capital work) in progress,capex_projects,Part of total capex with capex
+cash_flow,,^\(?payments?\)? (for|to) (the )?((acquisition|purchase) of )?intangible,capex_intangibles,
+cash_flow,,"^(net )?cash .{0,40}investing activities",cfi,
+cash_flow,,^(dividends?( distribution)? paid|payments? of dividends?)(?! to employees?),dividends_paid,
+cash_flow,,"^(net )?cash .{0,40}financing activities",cff,
+cash_flow,,^net (change|increase|decrease|\(decrease\) ?/ ?increase|increase ?/ ?\(decrease\)) in cash,net_change_in_cash,
+cash_flow,,^cash (and|&) cash equivalents? (at|-) ?(the )?beginning,cash_begin,
+cash_flow,,^cash (and|&) cash equivalents? (at|-) ?(the )?end,cash_end,

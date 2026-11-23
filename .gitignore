@@ -1,0 +1,23 @@
+# Secrets
+.env
+*.key
+
+# Data: never commit filings, databases or outputs from real documents
+data/raw/
+data/db/
+outputs/
+*.sqlite
+*.db
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+*.part
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.vscode/
