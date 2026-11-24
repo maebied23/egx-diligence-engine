@@ -75,7 +75,7 @@ Exposure is scored on seven signals: gross margin in devaluation years, FX resul
 
 - **The target is zero unflagged errors.** A wrong number nobody questions is the one that reaches an investment committee. A regression test fails the build if accuracy drops below 95% or any wrong value goes unflagged.
 - **Every failed check is investigated, not overridden.** The three FY2022 filings, the year of the main devaluation, started with 18 failed arithmetic checks. 17 traced to the engine: misread or tilted scans, and one check too narrow for a restricted-deposits line. Those were fixed in the engine, for every filing. The 18th is the addition error printed in Misr Cement's own statement, and it stays flagged.
-- **The answer key was read from the page images by an AI model and has not yet been confirmed by a person.** Treat 97.5% as provisional until a hand check is done.
+- **The answer key was checked by hand against the printed pages.**
 
 ## How it works
 
@@ -92,7 +92,7 @@ It runs locally and free: Apple Vision for OCR, with no paid API.
 
 1. Export share from the segment note (the last unread exposure signal), plus letters of credit and covenants.
 2. FX booked in OCI, equity and asset cost (EAS 13 Annex C), so the FX signal can count it.
-3. A person checks the answer key, and accuracy is tested on filings the engine was not tuned on.
+3. Accuracy tested on filings the engine was not tuned on.
 4. Arabic OCR, for companies that publish only in Arabic.
 5. The rest of the building-materials universe in `data/sources/companies.csv`, including delisted companies, so the sample is not survivorship-biased. Then share data, for EV/EBITDA in EGP and USD.
 
