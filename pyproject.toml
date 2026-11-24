@@ -1,5 +1,5 @@
 [project]
-name = "egypt-filings-engine"
+name = "egx-diligence-engine"
 version = "0.1.0"
 description = "Extract Egyptian company financial statements with provenance and analyse devaluation exposure"
 requires-python = ">=3.11"

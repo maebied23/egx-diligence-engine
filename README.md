@@ -1,4 +1,4 @@
-# Egypt Filings Engine
+# EGX Diligence Engine
 
 Reads the published financial statements and notes of companies listed on the Egyptian Exchange (EGX) into a standard template, with every number traced to its page. It computes PE metrics on standard definitions and then answers the question an investor in Egypt always has to ask: **what happens to this business when the pound falls?**
 

@@ -15,7 +15,7 @@ from pathlib import Path
 
 from efe import config
 
-UA = "Mozilla/5.0 (egypt-filings-engine)"
+UA = "Mozilla/5.0 (egx-diligence-engine)"
 DELAY_S = 1.0
 
 

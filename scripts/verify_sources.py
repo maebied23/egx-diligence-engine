@@ -18,7 +18,7 @@ import urllib.request
 from pathlib import Path
 
 DEFAULT = Path(__file__).resolve().parent.parent / "data" / "sources" / "filings.csv"
-UA = "Mozilla/5.0 (egypt-filings-engine source check)"
+UA = "Mozilla/5.0 (egx-diligence-engine source check)"
 CHECK_COLS = ["http_status", "content_type", "bytes", "checked_on"]
 DELAY_S = 1.0
 

@@ -1,1 +1,1 @@
-"""Egypt Filings Engine."""
+"""EGX Diligence Engine."""

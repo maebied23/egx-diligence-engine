@@ -112,7 +112,7 @@ def build(conn: sqlite3.Connection, path: Path = OUT) -> Path:
     ws = wb.active
     ws.title = "Read me"
     lines = [
-        ("Egypt Filings Engine: databook", BOLD),
+        ("EGX Diligence Engine: databook", BOLD),
         (f"Built {dt.date.today().isoformat()} from the companies' published consolidated annual financial statements.", None),
         ("", None),
         ("How to read it", BOLD),
